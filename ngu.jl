@@ -292,7 +292,7 @@ end
 
 "Perform beam search on all maps in `s` and return a list of the `limit` best
 maps found. `vmap` must be the terrain validity map for all maps in `s`."
-function beam(s::Vector{Map}, limit, vmap)
+function beam(s::Vector{Map}, limit, maxb, vmap)
     beam = Vector{Map}()
     seen = Set{UInt64}()
     sizehint!(beam, limit)
@@ -302,7 +302,7 @@ function beam(s::Vector{Map}, limit, vmap)
         for y in 1:17
             for x in 1:20
                 m.beacons[x,y] == 255 && continue
-                for b in 0:length(beacons)
+                for b in 0:maxb
                     if (b == 0) || vmap[x,y,b]
                         mx = setbeacon(m, x, y, b)
                         beamUpdate!(beam, mx, seen, limit)
@@ -316,7 +316,7 @@ end
 
 "Make `level` random changes to `m` in place. `vmap` must be the terrain
 validity map for `m`."
-function applychaos!(m::Map, level, vmap)
+function applychaos!(m::Map, level, maxb, vmap)
     for i in 0:level
         ok = false
         x = 0
@@ -325,7 +325,7 @@ function applychaos!(m::Map, level, vmap)
         while !ok
             x = rand(1:20)
             y = rand(1:17)
-            b = rand(0:length(beacons))
+            b = rand(0:maxb)
             ok = (m.beacons[x,y] != 255) && (m.beacons[x,y] != b) &&
                  ((b == 0) || vmap[x,y,b])
         end
@@ -337,14 +337,14 @@ end
 "Generate a list of `size` different random variations on `base`, each by
 making `level` random changes. `vmap` must be the terrain validity map for
 `base`."
-function genchaoslist(base::Map, level, size, vmap)
+function genchaoslist(base::Map, level, size, maxb, vmap)
     x = Vector{Map}()
     sizehint!(x,size)
     seen = Set{UInt64}()
     hits = 0
     while hits < size
         nm = copy(base)
-        applychaos!(nm, level, vmap)
+        applychaos!(nm, level, maxb, vmap)
         h = hash(nm)
         if !in(seen,h)
             push!(seen,h)
@@ -361,12 +361,12 @@ end
 function go(c:: Config)
     base = c.terrain
     vmap = validitymap(base)
-    x = genchaoslist(base, c.initialChaos, c.beamWidth, vmap)
+    x = genchaoslist(base, c.initialChaos, c.beamWidth, c.lastBeacon, vmap)
     best = copy(x[1])
     worst = 0
     bestbest = copy(x[1])
     while true
-        x = beam(x, c.beamWidth, vmap)
+        x = beam(x, c.beamWidth, c.lastBeacon, vmap)
         if x[1].score > best.score
             best = copy(x[1])
             println(best.score)
@@ -382,7 +382,7 @@ function go(c:: Config)
                 draw(bestbest)
                 println(bestbest.score)
                 empty(x)
-                x = genchaoslist(bestbest, c.shakeupChaos, c.beamWidth, vmap)
+                x = genchaoslist(bestbest, c.shakeupChaos, c.beamWidth, c.lastBeacon, vmap)
                 best = copy(x[1])
                 worst = 0
             end
