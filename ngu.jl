@@ -2,7 +2,6 @@
 import Base.==
 import Base.isless
 import Test
-import DataStructures.SortedSet
 
 
 
@@ -65,6 +64,7 @@ end
 struct Config
     lastBeacon::UInt8
     beamWidth::UInt16
+    chaosWidth::UInt16
     initialChaos::UInt16
     shakeupChaos::UInt16
     terrain::Map
@@ -363,7 +363,7 @@ end
 function go(c:: Config)
     base = c.terrain
     vmap = validitymap(base)
-    x = genchaoslist(base, c.initialChaos, c.beamWidth, c.lastBeacon, vmap)
+    x = genchaoslist(base, c.initialChaos, c.chaosWidth, c.lastBeacon, vmap)
     best = copy(x[1])
     worst = 0
     bestbest = copy(x[1])
@@ -384,7 +384,7 @@ function go(c:: Config)
                 draw(bestbest)
                 println(bestbest.score)
                 empty(x)
-                x = genchaoslist(bestbest, c.shakeupChaos, c.beamWidth, c.lastBeacon, vmap)
+                x = genchaoslist(bestbest, c.shakeupChaos, c.chaosWidth, c.lastBeacon, vmap)
                 best = copy(x[1])
                 worst = 0
             end
@@ -393,5 +393,9 @@ function go(c:: Config)
 end
 
 function test1()
-    go(Config(9,1000,100,100,terrainToMap(map1)))
+    go(Config(9,1000,1000,100,100,terrainToMap(map1)))
+end
+
+function rebraneStyle()
+    go(Config(9,50,1,200,200,terrainToMap(map1)))
 end
