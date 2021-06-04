@@ -154,7 +154,7 @@ end
 # Beacon('o',26,[(-2,-2),(-1,-2),(0,-2),(1,-2),(2,-2),(-2,-1),(2,-1),(-2,0),(2,0),
 #                  (-2,1),(2,1),(-2,2),(-1,2),(0,2),(1,2),(2,2)])]
 
-#Speed
+# Speed
 const beacons = [
     Beacon(
         '*',
@@ -628,9 +628,9 @@ function go(c::Config)
 end
 
 function test1()
-    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map4)))
+    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map2)))
 end
 
 function rebraneStyle()
-    go(Config(9, 100, 1, 2000, 2000, terrainToMap(map3)))
+    go(Config(9, 100, 1, 2000, 2000, terrainToMap(map2)))
 end
