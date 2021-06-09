@@ -3,6 +3,7 @@ import Base.==
 import Base.isless
 import Test
 import Base.copyto!
+import Printf.@printf
 
 
 
@@ -88,6 +89,47 @@ map4 = [
     "   ..........    ..."
 ]
 
+tiscore = [
+    "        kv          ",
+    "        oo.    .    ",
+    "       . ..   ..... ",
+    "       ..... --.... ",
+    "        oo  ooooooo ",
+    "   .... oo   . . o. ",
+    "   .-...... -.......",
+    "   ooo..o.. o  |    ",
+    "   .oo.ooo.oo  |    ",
+    "   .....o-...  .    ",
+    "      .. ...--..... ",
+    "             o..  < ",
+    "             o..oo< ",
+    "  .    ...   -..^.. ",
+    "  ..   .*.          ",
+    "       ...          ",
+    "                    "
+]
+
+ipotest = [
+    "        **          ",
+    "        **.    .    ",
+    "       . ..   ..... ",
+    "       ..... --.... ",
+    "        **  ******* ",
+    "   .... **   . . *. ",
+    "   .*...... *.......",
+    "   ***..*.. *  *    ",
+    "   .**.***.**  *    ",
+    "   .....**...  .    ",
+    "      .. ...**..... ",
+    "             *..  * ",
+    "             *..*** ",
+    "  .    ...   *..*.. ",
+    "  ..   .*.          ",
+    "       ...          ",
+    "                    "
+]
+
+
 """
     Map
 
@@ -136,26 +178,26 @@ struct Config
 end
 
 # Production
-#const beacons = [
-# Beacon('*',30,[(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]),
-# Beacon('k',35,[(-1,-2),(-2,-1),(-2,1),(-1,2),(1,-2),(2,-1),(2,1),(1,2)]),
-# Beacon('^',22,[(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(-1,-3),(-2,-3),(1,-3),
-#                (2,-3),(-1,-4),(1,-4)]),
-# Beacon('v',22,[(0,1),(0,2),(0,3),(0,4),(0,5),(-1,3),(-2,3),(1,3),
-#                (2,3),(-1,4),(1,4)]),
-# Beacon('>',22,[(1,0),(2,0),(3,0),(4,0),(5,0),(3,-1),(3,-2),(3,1),(3,2),
-#                   (4,1),(4,-1)]),
-# Beacon('<',22,[(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-3,-1),(-3,-2),(-3,1),
-#                  (-3,2),(-4,1),(-4,-1)]),
-# Beacon('-',27,[(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-6,0),(1,0),(2,0),(3,0),
-#                  (4,0),(5,0),(6,0)]),
-# Beacon('|',27,[(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,1),(0,2),(0,3),
-#                  (0,4),(0,5),(0,6)]),
-# Beacon('o',26,[(-2,-2),(-1,-2),(0,-2),(1,-2),(2,-2),(-2,-1),(2,-1),(-2,0),(2,0),
-#                  (-2,1),(2,1),(-2,2),(-1,2),(0,2),(1,2),(2,2)])]
+const beacons = [
+ Beacon('*',30,[(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]),
+ Beacon('k',35,[(-1,-2),(-2,-1),(-2,1),(-1,2),(1,-2),(2,-1),(2,1),(1,2)]),
+ Beacon('^',22,[(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(-1,-3),(-2,-3),(1,-3),
+                (2,-3),(-1,-4),(1,-4)]),
+ Beacon('v',22,[(0,1),(0,2),(0,3),(0,4),(0,5),(-1,3),(-2,3),(1,3),
+                (2,3),(-1,4),(1,4)]),
+ Beacon('>',22,[(1,0),(2,0),(3,0),(4,0),(5,0),(3,-1),(3,-2),(3,1),(3,2),
+                   (4,1),(4,-1)]),
+ Beacon('<',22,[(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-3,-1),(-3,-2),(-3,1),
+                  (-3,2),(-4,1),(-4,-1)]),
+ Beacon('-',27,[(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-6,0),(1,0),(2,0),(3,0),
+                  (4,0),(5,0),(6,0)]),
+ Beacon('|',27,[(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,1),(0,2),(0,3),
+                  (0,4),(0,5),(0,6)]),
+ Beacon('o',26,[(-2,-2),(-1,-2),(0,-2),(1,-2),(2,-2),(-2,-1),(2,-1),(-2,0),(2,0),
+                  (-2,1),(2,1),(-2,2),(-1,2),(0,2),(1,2),(2,2)])]
 
 # Speed
-const beacons = [
+const spdBeacons = [
     Beacon(
         '*',
         40,
@@ -408,12 +450,14 @@ Test.@testset "Map operations" begin
                 removeBeacon!(m, x, y)
                 Test.@test m.score == score(m)
                 Test.@test m == base
+                Test.@test m.score == base.score
             end
             addBeacon!(m, x, y, UInt8(1))
             base = copy(m)
         end
     end
 end
+
 
 
 "Like addBeacon!, but creates a copy of the map and returns it."
@@ -446,8 +490,31 @@ function draw(m::Map)
     end
 end
 
+"Draws an ASCII representation of the map including the
+ score for each square."
+function fulldraw(m::Map)
+    score = 0
+    for y = 1:17
+        rowScore = 0
+        for x = 1:20
+            if m.beacons[x, y] == 0
+                @printf "%3u " m.scores[x,y]
+                rowScore += m.scores[x,y]
+                score += m.scores[x,y]
+            elseif m.beacons[x, y] == 255
+                print("    ")
+            else
+                print(" ", beacons[m.beacons[x, y]].repr, "  ")
+            end
+        end
+        println(":: ",rowScore)
+    end
+    print(score)
+end
+
 "Creates a new map from an array of strings, paying attention only to
- terrain (not existing beacons)."
+ terrain (not existing beacons). Existing beacons are treated as .s,
+ so this function can strip beacons from an example map."
 function terrainToMap(s::Array{String,1})::Map
     m = blankMap()
     for y = 1:17
@@ -464,6 +531,29 @@ function terrainToMap(s::Array{String,1})::Map
     end
     m
 end
+
+"Creates a new map from an array of strings, paying attention to
+ terrain and existing beacons."
+function premapToMap(s::Array{String,1})::Map
+    m = terrainToMap(s)
+    for y::UInt8 = 1:17
+        for x::UInt8 = 1:20
+            if (s[y][x] != ' ') && (s[y][x] != '.')
+                ok = false
+                for (bi::UInt8, b) in enumerate(beacons)
+                    if b.repr == s[y][x]
+                        addBeacon!(m, x, y, bi)
+                        ok = true
+                        break
+                    end
+                end
+                ok || println("Unknown character ",s[y][x]," in map")
+            end
+        end
+    end
+    m
+end
+
 
 "Checks if map `x` is in set `seen`. If it is not, adds map `x` to `b`, an
  array of maps sorted by score in descending order, and limits its length to
@@ -495,6 +585,18 @@ function setbeacon(m::Map, x::UInt8, y::UInt8, b::UInt8)
     nm
 end
 
+Test.@testset "Bare scores" begin
+    m = plainMap()
+    base = copy(m)
+    for b::UInt8 = 1:length(beacons)
+        setbeacon!(m, UInt8(10), UInt8(8), b)
+        Test.@test m.score == (base.score - 100) + (beacons[b].score * length(beacons[b].offsets))
+        setbeacon!(m, UInt8(10), UInt8(8), UInt8(0))
+        Test.@test m.score == base.score
+    end
+end
+
+
 "Construct a terrain validity map for the given map's terrain. The validity map is a
 3D array `[x,y,b]` which indicates if placing beacon b at location x,y has
 any possibility of increasing the map's score. If false, the placement can
@@ -514,9 +616,31 @@ function validitymap(m::Map)::VMap
     vmap
 end
 
-"Perform beam search on all maps in `s` and return a list of the `limit` best
-maps found. `vmap` must be the terrain validity map for all maps in `s`."
-function beam(s::Vector{Map}, limit::UInt16, maxb::UInt8, vmap::VMap)::Vector{Map}
+"Optimize beacon types in place. Per wiki page, there is only one optimal
+ set of beacon types per beacon range and set of occupied squares."
+function inplaceopt!(m::Map, maxb::UInt8, vmap::VMap)
+    for y::UInt8 = 1:17
+        for x::UInt8 = 1:20
+            m.beacons[x,y] == 0 && continue
+            m.beacons[x,y] == 255 && continue
+            bestScore = m.score
+            bestBeacon = m.beacons[x,y]
+            for b::UInt8 = 1:maxb
+                vmap[x, y, b] || continue
+                setbeacon!(m, x, y, b)
+                if m.score > bestScore
+                    bestScore = m.score
+                    bestBeacon = b
+                end
+            end
+            setbeacon!(m, x, y, bestBeacon)
+        end
+    end
+end
+
+
+"Beam search based on optimization theorem."
+function beambests(s::Vector{Map}, limit::UInt16, maxb::UInt8, vmap::VMap)::Vector{Map}
     beam = Vector{Map}()
     seen = Set{UInt64}()
     sizehint!(beam, limit)
@@ -529,19 +653,26 @@ function beam(s::Vector{Map}, limit::UInt16, maxb::UInt8, vmap::VMap)::Vector{Ma
         for y::UInt8 = 1:17
             for x::UInt8 = 1:20
                 m.beacons[x, y] == 255 && continue
-                for b::UInt8 = 0:maxb
-                    if (m.beacons[x,y] != b) && ((b == 0) || vmap[x, y, b])
-                        copyto!(workMap, m)
-                        setbeacon!(workMap, x, y, b)
-                        # mx = setbeacon(m, x, y, b)
-                        beamUpdate!(beam, workMap, seen, limit)
-                    end
+                bestScore = m.score
+                bestBeacon = 0
+                # Because of IPO, we only need to consider presence or absence of beacon
+                copyto!(workMap, m)
+                if m.beacons[x, y] > 0
+                    removeBeacon!(workMap, x, y)
+                else
+                    addBeacon!(workMap, x, y, UInt8(1))
+                end
+                inplaceopt!(workMap, maxb, vmap)
+                if workMap.score > m.score
+                    beamUpdate!(beam, workMap, seen, limit)
                 end
             end
         end
     end
     beam
 end
+
+
 
 "Make `level` random changes to `m` in place. `vmap` must be the terrain
 validity map for `m`."
@@ -554,7 +685,12 @@ function applychaos!(m::Map, level::UInt16, maxb::UInt8, vmap::VMap)
         while !ok
             x::UInt8 = rand(1:20)
             y::UInt8 = rand(1:17)
-            b::UInt8 = rand(0:maxb)
+            h::UInt8 = rand(1:100)
+            if h < 50
+                b = UInt8(0)
+            else
+                b::UInt8 = rand(1:maxb)
+            end
             ok =
                 (m.beacons[x, y] != 255) &&
                 (m.beacons[x, y] != b) &&
@@ -562,6 +698,27 @@ function applychaos!(m::Map, level::UInt16, maxb::UInt8, vmap::VMap)
         end
         setbeacon!(m, x, y, b)
     end
+end
+
+"Make `level` random changes to `m` in place as applychaos! does, but
+IPO the map afterwards."
+function applybinchaos!(m::Map, level::UInt16, maxb::UInt8, vmap::VMap)
+    for i = 0:level
+        ok = false
+        x = UInt8(0)
+        y = UInt8(0)
+        while !ok
+            x::UInt8 = rand(1:20)
+            y::UInt8 = rand(1:17)
+            ok = (m.beacons[x, y] != 255)
+        end
+        if m.beacons[x,y] > 0
+            setbeacon!(m, x, y, UInt8(0))
+        else
+            setbeacon!(m, x, y, UInt8(1))
+        end
+    end
+    inplaceopt!(m, maxb, vmap)
 end
 
 
@@ -588,6 +745,48 @@ function genchaoslist(base::Map, level::UInt16, size::UInt16, maxb::UInt8, vmap:
 end
 
 
+
+"Late acceptance hill climbing"
+function lahc(map, maxb::UInt8, width::UInt32, steps::UInt16, failThreshold::UInt16)
+    last = map
+    vmap = validitymap(last)
+    buffer = fill(last.score, width)
+    index = 1
+    realFail = failThreshold * width
+    fails = 0
+    realbest = last.score
+    work = blankMap()
+    while true
+        copyto!(work, last)
+        applybinchaos!(work, steps, maxb, vmap)
+        if ((work.score >= last.score) || (work.score >= buffer[index]))
+            fails = 0
+            copyto!(last, work)
+            buffer[index] = work.score
+            if work.score > realbest
+                realbest = work.score
+                draw(work)
+                println(work.score)
+            end
+        else
+            fails += 1
+            if fails > realFail
+
+                fails = 0
+                steps += UInt16(1)
+                println("Increasing step count to ",steps)
+            end
+        end
+
+        index += 1
+        if index > width
+            index = 1
+        end
+    end
+end
+
+
+
 "Main function."
 function go(c::Config)
     base = c.terrain
@@ -595,42 +794,52 @@ function go(c::Config)
     x = genchaoslist(base, c.initialChaos, c.chaosWidth, c.lastBeacon, vmap)
     best = copy(x[1])
     worst = 0
+    grace = 0
     bestbest = copy(x[1])
     while true
-        x = beam(x, c.beamWidth, c.lastBeacon, vmap)
+        x = beambests(x, c.beamWidth, c.lastBeacon, vmap)
         if x[1].score > best.score
+            grace = 0
             best = copy(x[1])
             println(best.score)
         else
             if x[end].score > worst
                 worst = x[end].score
+                grace = 0
                 println("Improving low results ", worst)
             else
-                print("Emergency reseed")
-                if (best.score > bestbest.score)
-                    copyto!(bestbest,best)
+                if grace < 10
+                    grace += 1
+                    println("Grace period ",best.score,"-",worst)
+                else
+                    print("Emergency reseed")
+                    if (best.score > bestbest.score)
+                        copyto!(bestbest,best)
+                    end
+                    draw(bestbest)
+                    println(bestbest.score)
+                    empty(x)
+                    x = genchaoslist(
+                        bestbest,
+                        c.shakeupChaos,
+                        c.chaosWidth,
+                        c.lastBeacon,
+                        vmap,
+                    )
+                    best = copy(x[1])
+                    worst = 0
+                    grace = 0
                 end
-                draw(bestbest)
-                println(bestbest.score)
-                empty(x)
-                x = genchaoslist(
-                    bestbest,
-                    c.shakeupChaos,
-                    c.chaosWidth,
-                    c.lastBeacon,
-                    vmap,
-                )
-                best = copy(x[1])
-                worst = 0
+
             end
         end
     end
 end
 
 function test1()
-    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map2)))
+    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map1)))
 end
 
 function rebraneStyle()
-    go(Config(9, 100, 1, 2000, 2000, terrainToMap(map2)))
+    go(Config(9, 100, 1, 2000, 2000, terrainToMap(map1)))
 end
