@@ -663,9 +663,7 @@ function beambests(s::Vector{Map}, limit::UInt16, maxb::UInt8, vmap::VMap)::Vect
                     addBeacon!(workMap, x, y, UInt8(1))
                 end
                 inplaceopt!(workMap, maxb, vmap)
-                if workMap.score > m.score
-                    beamUpdate!(beam, workMap, seen, limit)
-                end
+                beamUpdate!(beam, workMap, seen, limit)
             end
         end
     end
@@ -801,7 +799,7 @@ function go(c::Config)
         if x[1].score > best.score
             grace = 0
             best = copy(x[1])
-            println(best.score)
+            println(best.score,"-",x[end].score)
         else
             if x[end].score > worst
                 worst = x[end].score
@@ -837,7 +835,7 @@ function go(c::Config)
 end
 
 function test1()
-    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map1)))
+    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map2)))
 end
 
 function rebraneStyle()
