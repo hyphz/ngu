@@ -38,9 +38,26 @@
 16. Go back to step 4.
 17. Repeat until the CPU burns out or you press Ctrl+C. Hopefully the latter will happen sooner.
 
-## In-place optimization and the "IPO theorem"
+## Using the multithreaded solver
 
-The IPO theorem:
+If you want to use the multithreaded solver, follow the previous instructions but:
+
+* Make sure that Julia is started with permission to make more than one thread. If you're starting it in Juno, it already is, but if you're starting it from the command line or desktop icon you need to add `--threads auto` to allow it to use as many threads as you have cores, or `--threads X` where X is the number you want to use (there is no benefit to using more than the number of cores you have, though)
+* Call `gothreaded` instead of `go`.
+* The multithreaded solver works better with a lower beam width and a lower `shakeUpChaos`.
+
+How the multithreaded solver works:
+
+* At the start, the system generates a different randomised set of starting maps for each core.
+* Each core runs a beam search on their own set.
+* Once all are done, the best generated maps from all cores are assembled into a beam.
+* Core 1 is given that beam to work on in the next cycle. All remaining cores get a version of that beam with `shakeupChaos` random changes made to each map in the beam.
+
+Be warned that running the multithreaded solver on all your cores will hit your CPU **hard**, as all will be running continuously. On the other hand, it does increase scores scarily fast.
+
+## In-place type optimization and the "IPTO theorem"
+
+The IPTO theorem: for any given set of beacon positions, there is exactly one mapping of beacon types to positions that is optimal, and it can be calculated from that set of positions alone.  
 
 A beacon's contribution to a map's score is determined exactly by three things: its position, its type, and which squares in its affected area are obstructed (by terrain or other beacons).
 

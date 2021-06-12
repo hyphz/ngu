@@ -784,6 +784,62 @@ function lahc(map, maxb::UInt8, width::UInt32, steps::UInt16, failThreshold::UIn
 end
 
 
+function gothreaded(c::Config)
+    base = c.terrain
+    vmap = validitymap(base)
+    xs = [genchaoslist(base, c.initialChaos, c.chaosWidth, c.lastBeacon, vmap)
+        for t = 1:Threads.nthreads()]
+    best = copy(xs[1][1])
+    worst = 0
+    bestbest = copy(xs[1][1])
+    workspace = [blankMap() for t = 1:c.beamWidth]
+    while true
+        @Threads.threads for t = 1:Threads.nthreads()
+            xs[t] = beambests(xs[t], c.beamWidth, c.lastBeacon, vmap)
+        end
+        bestthread = 0
+        bestThreadScore = 0
+        for t = 1:Threads.nthreads()
+            print(xs[t][1].score,"-",xs[t][end].score, " ")
+            if (xs[t][1].score > bestThreadScore)
+                bestthread = t
+                bestThreadScore = xs[t][1].score
+            end
+        end
+        println(" -- ",bestThreadScore)
+        if bestThreadScore > best.score
+            copyto!(best, xs[bestthread][1])
+            draw(best)
+        end
+        indices = [1 for x in 1:Threads.nthreads()]
+        copyto!(workspace[1], best)
+        for x = 2:c.beamWidth
+            bestScore = 0
+            bestThread = 0
+            for t = 1:Threads.nthreads()
+                if indices[t] < length(xs[t])
+                    if xs[t][indices[t]].score > bestScore
+                        bestScore = xs[t][indices[t]].score
+                        bestThread = t
+                    end
+                end
+            end
+            copyto!(workspace[x],xs[bestThread][indices[bestThread]])
+            indices[bestThread] += 1
+        end
+        for t = 1:Threads.nthreads()
+            xs[t] = [blankMap() for t = 1:c.beamWidth]
+            for w = 1:c.beamWidth
+                copyto!(xs[t][w],workspace[w])
+                t > 1 && applybinchaos!(xs[t][w], c.shakeupChaos, c.lastBeacon, vmap)
+            end
+        end
+    end
+end
+
+
+
+
 
 "Main function."
 function go(c::Config)
@@ -835,7 +891,7 @@ function go(c::Config)
 end
 
 function test1()
-    go(Config(9, 1000, 1000, 100, 100, terrainToMap(map2)))
+    gothreaded(Config(9, 100, 100, 100, 5, terrainToMap(map3)))
 end
 
 function rebraneStyle()
